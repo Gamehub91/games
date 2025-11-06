@@ -10,6 +10,7 @@
     :root{
         --deep-purple:#4a148c;
         --dark:#1c1c1c;
+        --intro-color: #ffffff; /* chosen: readable neon-cyan that looks great on purple */
     }
     html,body{height:100%;}
     body{
@@ -50,7 +51,7 @@
 
     .intro-center{
         text-align:center;
-        color: #fff;
+        color: var(--intro-color);
         padding: 0 20px;
     }
 
@@ -63,12 +64,20 @@
         opacity:0;
         transform:scale(.96);
         filter:drop-shadow(0 8px 30px rgba(0,0,0,0.6));
+        color: var(--intro-color);
+        text-shadow:
+            0 0 10px rgba(142,36,170,0.08),
+            0 0 18px rgba(142,36,170,0.06),
+            0 0 30px rgba(142,36,170,0.10);
     }
     .intro-sub{
-        font-size: clamp(0.9rem, 3.2vw, 1.2rem);
+        font-size: clamp(0.95rem, 4.25vw, 4.25rem)!important;
         font-weight:600;
         opacity:0;
         transform:translateY(18px);
+        color: var(--intro-color);
+        /* a slightly softer glow */
+        text-shadow: 0 0 8px rgba(142,36,170,0.06);
     }
 
     /* Animations for reveal/fade */
@@ -80,15 +89,6 @@
     @keyframes introOut {
         0% { opacity:1; transform: scale(1) }
         100% { opacity:0; transform: scale(.98) translateY(-6px) }
-    }
-
-    /* small glow effect for the first title */
-    .glow {
-        color: #fff;
-        text-shadow:
-            0 0 8px rgba(255,255,255,0.12),
-            0 0 20px rgba(128,216,255,0.06),
-            0 0 40px rgba(142,36,170,0.18);
     }
 
     /* ---------- Main site styles (kept & polished) ---------- */
@@ -230,9 +230,10 @@
         100% { transform: scale(1) rotateY(360deg); }
     }
 
+    /* Whack fixes: remove scaling on active so size doesn't change */
     .whack-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:clamp(250px,65vw,320px); margin:0 auto; }
-    .whack-hole { background:#333; height:80px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:2rem; cursor:pointer; transition:all .18s; color:#fff; }
-    .whack-hole.active { background:linear-gradient(45deg,#ab47bc,#7b1fa2); transform:scale(1.03); box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
+    .whack-hole { background:#333; height:80px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:2rem; cursor:pointer; transition:background .18s; color:#fff; user-select:none; -webkit-user-select:none; }
+    .whack-hole.active { background:linear-gradient(45deg,#ab47bc,#7b1fa2); box-shadow: 0 6px 20px rgba(0,0,0,0.35); } /* removed transform scaling */
 
     .memory-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; width:clamp(250px,65vw,360px); margin:0 auto; }
     .memory-card { cursor:pointer; perspective:1000px; height:64px; }
@@ -245,8 +246,8 @@
     .memory-card .card-front{ transform: rotateY(180deg); }
 
     .ttt-grid { display:grid; grid-template-columns:repeat(3,1fr); width:clamp(240px,60vw,320px); height:clamp(240px,60vw,320px); gap:6px; margin: 10px auto; }
-    .ttt-cell { display:flex; align-items:center; justify-content:center; font-size:2.2rem; border-radius:8px; background: #fff; border:2px solid #ab47bc; cursor:pointer; transition:transform .12s; }
-    .ttt-cell:hover{ transform:scale(1.02); }
+    .ttt-cell { display:flex; align-items:center; justify-content:center; font-size:2.2rem; border-radius:8px; background: #fff; border:2px solid #ab47bc; cursor:pointer; transition:none; user-select:none; -webkit-user-select:none; box-sizing:border-box; }
+    .ttt-cell:hover{ transform:none; } /* ensure no scaling on hover */
 
     .footer { width:100%; text-align:center; padding:22px 0; margin-top:auto; color:rgba(255,255,255,0.75); font-size:0.95rem; }
     .credit-line { font-weight:800; color:#ffccff; margin-bottom:6px; font-size:1.05rem; }
@@ -267,7 +268,7 @@
     <!-- Intro overlay -->
     <div id="introOverlay" class="intro-overlay" aria-hidden="true">
         <div class="intro-center">
-            <div id="introTitle" class="intro-title glow">Welcome to GameHub</div>
+            <div id="introTitle" class="intro-title">Welcome to GameHub</div>
             <div id="introSub" class="intro-sub">A Collaboration by Zarnab, Azhaan &amp; Arham</div>
         </div>
     </div>
@@ -307,28 +308,11 @@
 
 <script>
 /* ---------- Intro overlay choreography ---------- */
-/*
-  Timeline (approx):
-    0.0s - 0.6s  : intro title fades/scales in
-    0.6s - 2.6s  : hold title visible
-    2.6s - 3.2s  : title fade out
-    3.0s - 3.6s  : subtitle slides up & fades in
-    3.6s - 5.6s  : hold subtitle
-    5.6s - 6.2s  : subtitle fades out
-    6.2s - 6.8s  : overlay fades away; main content reveals
-*/
 (function(){
     const overlay = document.getElementById('introOverlay');
     const title = document.getElementById('introTitle');
     const sub = document.getElementById('introSub');
     const mainPage = document.getElementById('mainPage');
-
-    // helper to apply CSS transitions+classes
-    function animateIn(el, opts = {}) {
-        el.style.transition = `all ${opts.duration || 600}ms ${opts.easing || 'cubic-bezier(.2,.9,.2,1)'}`;
-        if (opts.to) Object.keys(opts.to).forEach(k => el.style[k] = opts.to[k]);
-        if (opts.from) Object.keys(opts.from).forEach(k => el.style[k] = opts.from[k]);
-    }
 
     // initial states
     title.style.opacity = '0';
@@ -338,31 +322,33 @@
     sub.style.transform = 'translateY(18px)';
     sub.style.transition = 'none';
 
-    // timeline using timeouts
+    // timeline using timeouts (kept same durations)
     setTimeout(() => {
-        // title in
-        animateIn(title, { duration: 650, to: { opacity:'1', transform:'scale(1) translateY(0)' } });
+        title.style.transition = 'all 650ms cubic-bezier(.2,.9,.2,1)';
+        title.style.opacity = '1';
+        title.style.transform = 'scale(1) translateY(0)';
     }, 80);
 
     setTimeout(() => {
-        // title out
-        animateIn(title, { duration: 600, to: { opacity:'0', transform:'scale(.98) translateY(-6px)' } });
+        title.style.transition = 'all 600ms ease';
+        title.style.opacity = '0';
+        title.style.transform = 'scale(.98) translateY(-6px)';
     }, 2600);
 
     setTimeout(() => {
-        // sub in
-        animateIn(sub, { duration: 600, to: { opacity:'1', transform:'translateY(0)' } });
+        sub.style.transition = 'all 600ms cubic-bezier(.2,.9,.2,1)';
+        sub.style.opacity = '1';
+        sub.style.transform = 'translateY(0)';
     }, 3000);
 
     setTimeout(() => {
-        // sub out
-        animateIn(sub, { duration: 600, to: { opacity:'0', transform:'translateY(-6px)' } });
+        sub.style.transition = 'all 600ms ease';
+        sub.style.opacity = '0';
+        sub.style.transform = 'translateY(-6px)';
     }, 5600);
 
     setTimeout(() => {
-        // overlay fade away to reveal main page
         overlay.classList.add('intro-hidden');
-        // reveal main
         mainPage.style.transition = 'opacity 700ms ease';
         mainPage.style.opacity = '1';
         mainPage.setAttribute('aria-hidden','false');
@@ -458,18 +444,18 @@ function toggleFullscreen() {
     }
 }
 
-/* ---------- Snake ---------- */
+/* ---------- Snake (desktop + mobile swipe) ---------- */
 let snake, food, dx, dy, score, gameRunning;
 function initSnake() {
     gameContent.innerHTML = `
         <div class="game-title">Snake Classic</div>
         <div class="status-text">Score: <span id="snakeScore">0</span></div>
-        <canvas id="snakeCanvas" width="300" height="300" style="border: 2px solid #ab47bc; max-width:100%;"></canvas>
+        <canvas id="snakeCanvas" width="300" height="300" style="border: 2px solid #ab47bc; max-width:100%; touch-action: none;"></canvas>
         <div style="text-align:center; margin-top:12px;">
             <button class="game-button" id="startSnakeBtn">Start Game</button>
             <button class="game-button" id="stopSnakeBtn">Stop</button>
         </div>
-        <div style="text-align:center; color:#666; margin-top:8px;">Use Arrow Keys to move</div>
+        <div style="text-align:center; color:#666; margin-top:8px;">Use Arrow Keys or swipe to move</div>
     `;
     document.getElementById('startSnakeBtn').addEventListener('click', startSnake);
     document.getElementById('stopSnakeBtn').addEventListener('click', ()=>{ gameRunning=false; if (snakeInterval) clearInterval(snakeInterval); });
@@ -482,6 +468,7 @@ function initSnake() {
         }
     };
 }
+
 function startSnake() {
     const canvas = document.getElementById('snakeCanvas');
     const ctx = canvas.getContext('2d');
@@ -501,6 +488,36 @@ function startSnake() {
     placeFood();
     document.getElementById('snakeScore').textContent = score;
     if (snakeInterval) clearInterval(snakeInterval);
+
+    // Touch swipe support for mobile
+    let touchStartX = 0, touchStartY = 0, touchEndX = 0, touchEndY = 0;
+    const minSwipeDistance = 20;
+
+    function handleTouchStart(e){
+        const t = e.changedTouchetouchStartX = t.clientX;
+        touchStartY = t.clientY;
+    }
+    function handleTouchEnd(e){
+        const t = e.changedTouches[0];
+        touchEndX = t.clientX;
+        touchEndY = t.clientY;
+        const dxSwipe = touchEndX - touchStartX;
+        const dySwipe = touchEndY - touchStartY;
+        if (Math.abs(dxSwipe) < minSwipeDistance && Math.abs(dySwipe) < minSwipeDistance) return;
+        if (Math.abs(dxSwipe) > Math.abs(dySwipe)) {
+            // horizontal swipe
+            if (dxSwipe > 0 && dx !== -1) { dx = 1; dy = 0; } // right
+            else if (dxSwipe < 0 && dx !== 1) { dx = -1; dy = 0; } // left
+        } else {
+            // vertical swipe
+            if (dySwipe > 0 && dy !== -1) { dx = 0; dy = 1; } // down
+            else if (dySwipe < 0 && dy !== 1) { dx = 0; dy = -1; } // up
+        }
+    }
+
+    // attach touch listeners to canvas
+    canvas.addEventListener('touchstart', handleTouchStart, {passive:true});
+    canvas.addEventListener('touchend', handleTouchEnd, {passive:true});
 
     function step(){
         if (!gameRunning || (dx === 0 && dy === 0)) return;
@@ -530,18 +547,18 @@ function startSnake() {
         });
     }
 
-    drawSnakeAndFood(); // initial draw
-    snakeInterval = setInterval(step, 140);
-
-    function drawSnakeAndFood(){
+    // initial draw
+    (function drawInitial(){
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#f0f0f0'; ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.fillStyle = '#e74c3c'; ctx.fillRect(food.x*gridSize, food.y*gridSize, gridSize-1, gridSize-1);
         snake.forEach((seg,i)=>{ ctx.fillStyle = i===0 ? '#4a148c' : '#7b1fa2'; ctx.fillRect(seg.x*gridSize, seg.y*gridSize, gridSize-1, gridSize-1); });
-    }
+    })();
+
+    snakeInterval = setInterval(step, 140);
 }
 
-/* ---------- Tic Tac Toe ---------- */
+/* ---------- Tic Tac Toe (player vs AI) ---------- */
 let tttBoard, tttPlayer, tttGameOver;
 function initTicTacToe(){
     tttBoard = Array(9).fill('');
@@ -549,11 +566,12 @@ function initTicTacToe(){
     tttGameOver = false;
     gameContent.innerHTML = `
         <div class="game-title">Tic-Tac-Toe</div>
-        <div class="status-text" id="tttStatus">Current Player: X</div>
+        <div class="status-text" id="tttStatus">Your Turn: X</div>
         <div id="tttGrid" class="ttt-grid"></div>
         <div style="text-align:center; margin-top:10px;">
             <button class="game-button" id="resetTtt">Reset Game</button>
         </div>
+        <div style="text-align:center; margin-top:8px; color:#666;">You are <strong>X</strong>. Computer is <strong>O</strong>.</div>
     `;
     const grid = document.getElementById('tttGrid');
     grid.innerHTML = '';
@@ -561,38 +579,52 @@ function initTicTacToe(){
         const cell = document.createElement('div');
         cell.className='ttt-cell';
         cell.dataset.index=i;
-        cell.addEventListener('click', ()=> tttMove(i));
+        cell.style.fontSize='2.2rem';
+        cell.addEventListener('click', ()=> playerMove(i));
         grid.appendChild(cell);
     }
     document.getElementById('resetTtt').addEventListener('click', initTicTacToe);
 }
-function tttMove(index){
+
+function playerMove(index){
     if (tttGameOver || tttBoard[index] !== '') return;
-    tttBoard[index] = tttPlayer;
-    const cells = document.querySelectorAll('.ttt-cell');
-    cells[index].textContent = tttPlayer;
+    tttBoard[index] = 'X';
+    renderTtt();
     const winner = checkTttWinner();
+    if (winner) return handleTttResult(winner);
+    // AI move after small delay
+    setTimeout(()=> {
+        aiMove();
+        const w2 = checkTttWinner();
+        if (w2) handleTttResult(w2);
+    }, 350);
+}
+
+function renderTtt(){
+    const cells = document.querySelectorAll('.ttt-cell');
+    cells.forEach((c,i)=> { c.textContent = tttBoard[i]; c.style.fontSize = '2.2rem'; });
     const status = document.getElementById('tttStatus');
-    if (winner === 'Draw') {
-        status.textContent = "It's a Draw!";
-        tttGameOver = true;
-    } else if (winner) {
-        status.textContent = `Player ${winner} Wins!`;
-        tttGameOver = true;
-        const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-        for (let line of lines) {
-            const [a,b,c] = line;
-            if (tttBoard[a] && tttBoard[a] === tttBoard[b] && tttBoard[a] === tttBoard[c]) {
-                cells[a].style.backgroundColor = cells[b].style.backgroundColor = cells[c].style.backgroundColor = '#e74c3c';
-                cells[a].style.color = cells[b].style.color = cells[c].style.color = 'white';
-                break;
-            }
+    if (!tttGameOver) status.textContent = `Current Player: ${tttPlayer === 'X' ? 'X (You)' : 'O (Computer)'}`;
+}
+
+function handleTttResult(winner){
+    tttGameOver = true;
+    const status = document.getElementById('tttStatus');
+    if (winner === 'Draw') status.textContent = "It's a Draw!";
+    else status.textContent = (winner === 'X') ? 'You Win!' : 'Computer Wins!';
+    // highlight winning triplet
+    const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    for (let line of lines) {
+        const [a,b,c] = line;
+        if (tttBoard[a] && tttBoard[a] === tttBoard[b] && tttBoard[a] === tttBoard[c]) {
+            const cells = document.querySelectorAll('.ttt-cell');
+            cells[a].style.backgroundColor = cells[b].style.backgroundColor = cells[c].style.backgroundColor = '#e74c3c';
+            cells[a].style.color = cells[b].style.color = cells[c].style.color = 'white';
+            break;
         }
-    } else {
-        tttPlayer = tttPlayer === 'X' ? 'O' : 'X';
-        status.textContent = `Current Player: ${tttPlayer}`;
     }
 }
+
 function checkTttWinner(){
     const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
     for(let line of lines){
@@ -603,7 +635,42 @@ function checkTttWinner(){
     return null;
 }
 
-/* ---------- Whack-a-Block ---------- */
+/* Simple but effective AI:
+   1) If AI can win => play winning move
+   2) If player can win next => block
+   3) Take center
+   4) Take a corner
+   5) Take any side
+*/
+function aiMove(){
+    // O is AI
+    // 1) win
+    for (let i=0;i<9;i++){
+        if (!tttBoard[i]) {
+            tttBoard[i] = 'O';
+            if (checkTttWinner() === 'O') { renderTtt(); return; }
+            tttBoard[i] = '';
+        }
+    }
+    // 2) block X
+    for (let i=0;i<9;i++){
+        if (!tttBoard[i]) {
+            tttBoard[i] = 'X';
+            if (checkTttWinner() === 'X') { tttBoard[i] = 'O'; renderTtt(); return; }
+            tttBoard[i] = '';
+        }
+    }
+    // 3) center
+    if (!tttBoard[4]) { tttBoard[4] = 'O'; renderTtt(); return; }
+    // 4) corners
+    const corners = [0,2,6,8];
+    for (let c of corners) if (!tttBoard[c]) { tttBoard[c] = 'O'; renderTtt(); return; }
+    // 5) sides
+    const sides = [1,3,5,7];
+    for (let s of sides) if (!tttBoard[s]) { tttBoard[s] = 'O'; renderTtt(); return; }
+}
+
+/* ---------- Whack-a-Block (slower + no resize + temporary explosion) ---------- */
 let whackScore, whackTime, whackActive;
 function initWhack(){
     whackScore = 0; whackTime = 30; whackActive = null;
@@ -622,6 +689,7 @@ function initWhack(){
         const hole = document.createElement('div');
         hole.className='whack-hole';
         hole.dataset.index = i;
+        hole.style.fontSize = '2rem';
         grid.appendChild(hole);
     }
     grid.addEventListener('click', (e)=>{
@@ -653,6 +721,7 @@ function startWhack(){
         }
     },1000);
 
+    // slowed down interval (was 700ms before) => make slightly easier to tap
     whackInterval = setInterval(()=>{
         const holes = document.querySelectorAll('.whack-hole');
         if (whackActive !== null && holes[whackActive]) { holes[whackActive].classList.remove('active'); holes[whackActive].textContent=''; }
@@ -662,27 +731,35 @@ function startWhack(){
             h.classList.add('active');
             h.textContent = '🎯';
         }
-    }, 700);
+    }, 900); // slower than before
 }
 function whackHit(index){
     const holes = document.querySelectorAll('.whack-hole');
+    const hole = holes[index];
+    if (!hole) return;
     if (index === whackActive && whackTime>0){
         whackScore++;
         document.getElementById('whackScore').textContent=whackScore;
-        const hole = holes[index];
-        if (hole){
-            hole.classList.remove('active');
-            hole.textContent = '💥';
-        }
+        // show explosion briefly then remove
+        hole.classList.remove('active');
+        hole.textContent = '💥';
         whackActive = null;
-        // restart interval so it doesn't immediately set same hole
+        // ensure the explosion disappears after short delay (0.5s)
+        setTimeout(()=> {
+            if (hole) hole.textContent = '';
+        }, 500);
+        // restart interval to continue game
         if (whackInterval) clearInterval(whackInterval);
         whackInterval = setInterval(()=>{
             const currentHoles = document.querySelectorAll('.whack-hole');
             if (whackActive !== null && currentHoles[whackActive]) { currentHoles[whackActive].classList.remove('active'); currentHoles[whackActive].textContent=''; }
             whackActive = Math.floor(Math.random()*9);
             if (currentHoles[whackActive]) { currentHoles[whackActive].classList.add('active'); currentHoles[whackActive].textContent='🎯'; }
-        }, 700);
+        }, 900);
+    } else {
+        // If tapped empty or not active, optionally a small feedback (no points)
+        hole.style.transform = 'scale(0.98)';
+        setTimeout(()=> hole.style.transform = '', 120);
     }
 }
 
@@ -882,7 +959,6 @@ function placeNewDot(){
     const maxX = Math.max(0, areaWidth - dotSize);
     const maxY = Math.max(0, areaHeight - dotSize);
 
-    // choose random position
     dot.style.left = Math.round(Math.random() * maxX) + 'px';
     dot.style.top = Math.round(Math.random() * maxY) + 'px';
 
@@ -937,8 +1013,7 @@ function rollDice(){
     },90);
 }
 
-/* ---------- Coin Flip ---------- */
-const coinFaces = {0:'HEADS',1:'TAILS'};
+/* ---------- Coin Flip ---------- */const coinFaces = {0:'HEADS',1:'TAILS'};
 const coinEmojis = {0:'💰',1:'🪙'};
 function initCoinFlip(){
     gameContent.innerHTML = `
@@ -951,7 +1026,8 @@ function initCoinFlip(){
         </div>
         <div class="status-text" id="coinResult"></div>
     `;
-    document.getElementById('coinDisplay').textContent = coinEmojis[0];document.getElementById('headsBtn').addEventListener('click', ()=> startCoinFlip(0));
+    document.getElementById('coinDisplay').textContent = coinEmojis[0];
+    document.getElementById('headsBtn').addEventListener('click', ()=> startCoinFlip(0));
     document.getElementById('tailsBtn').addEventListener('click', ()=> startCoinFlip(1));
 }
 function startCoinFlip(playerChoice){
@@ -979,7 +1055,6 @@ function startCoinFlip(playerChoice){
 
 /* Make sure main page visible after overlay (in case overlay closed early) */
 window.addEventListener('load', ()=>{
-    // if intro overlay already hidden, ensure main visible
     setTimeout(()=>{ if (!document.getElementById('introOverlay').classList.contains('intro-hidden')) return; mainPage.style.opacity='1'; }, 7000);
 });
 </script>
